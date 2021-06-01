@@ -5,40 +5,44 @@ import pickle
 import unittest
 
 
-sent = sentinel('sent')
+sent1 = sentinel('sent1')
 sent2 = sentinel('sent2')
 
 
 class TestSentinel(unittest.TestCase):
     def test_identity(self):
-        self.assertIs(sent, sent)
-        self.assertEqual(sent, sent)
+        self.assertIs(sent1, sent1)
+        self.assertEqual(sent1, sent1)
 
     def test_uniqueness(self):
-        self.assertIsNot(sent, sent2)
-        self.assertNotEqual(sent, sent2)
-        self.assertIsNot(sent, None)
-        self.assertNotEqual(sent, None)
-        self.assertIsNot(sent, Ellipsis)
-        self.assertNotEqual(sent, Ellipsis)
-        self.assertIsNot(sent, 'sent')
-        self.assertNotEqual(sent, 'sent')
-        self.assertIsNot(sent, '<sent>')
-        self.assertNotEqual(sent, '<sent>')
+        self.assertIsNot(sent1, sent2)
+        self.assertNotEqual(sent1, sent2)
+        self.assertIsNot(sent1, None)
+        self.assertNotEqual(sent1, None)
+        self.assertIsNot(sent1, Ellipsis)
+        self.assertNotEqual(sent1, Ellipsis)
+        self.assertIsNot(sent1, 'sent1')
+        self.assertNotEqual(sent1, 'sent1')
+        self.assertIsNot(sent1, '<sent1>')
+        self.assertNotEqual(sent1, '<sent1>')
 
     def test_repr(self):
-        self.assertEqual(repr(sent), '<sent>')
+        self.assertEqual(repr(sent1), '<sent1>')
 
     def test_type(self):
-        self.assertIsInstance(sent, type(sent))
-        self.assertIn('sent', repr(type(sent)))
+        self.assertIsInstance(sent1, type(sent1))
+        self.assertIn('sent1', repr(type(sent1)))
 
     def test_copy(self):
-        self.assertIs(sent, copy.copy(sent))
-        self.assertIs(sent, copy.deepcopy(sent))
+        self.assertIs(sent1, copy.copy(sent1))
+        self.assertIs(sent1, copy.deepcopy(sent1))
 
     def test_pickle_roundtrip(self):
-        self.assertIs(sent, pickle.loads(pickle.dumps(sent)))
+        self.assertIs(sent1, pickle.loads(pickle.dumps(sent1)))
+
+    def test_module_parameter(self):
+        sentinel_with_module = sentinel('sent', module='unittest')
+        self.assertEqual(sentinel_with_module.__module__, 'unittest')
 
 
 if __name__ == '__main__':
