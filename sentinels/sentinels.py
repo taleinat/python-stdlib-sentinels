@@ -1,10 +1,13 @@
 import sys as _sys
 
 
+__all__ = ['sentinel']
+
+
 if hasattr(_sys, '_getframe'):
-    get_parent_frame = lambda: _sys._getframe(2)
+    _get_parent_frame = lambda: _sys._getframe(2)
 else:  #pragma: no cover
-    def get_parent_frame():
+    def _get_parent_frame():
         """Return the frame object for the caller's parent stack frame."""
         try:
             raise Exception
@@ -29,7 +32,7 @@ def sentinel(name, repr=None, module=None):
     # the name of the module where the sentinel is defined.
     if module is None:
         try:
-            module = get_parent_frame().f_globals.get('__name__', '__main__')
+            module = _get_parent_frame().f_globals.get('__name__', '__main__')
         except (AttributeError, ValueError):
             pass
     if module is not None:
