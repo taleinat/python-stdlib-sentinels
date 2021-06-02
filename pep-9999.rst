@@ -14,6 +14,8 @@ Abstract
 This PEP suggests adding a utility for defining sentinel values, to be used
 in the stdlib and made publicly available as part of the stdlib.
 
+TL;DR: See the `Specification`_ and `Reference Implementation`_.
+
 Unique placeholder values, widely known as "sentinel values", are useful in
 Python programs for several things, such as default values for function
 arguments where ``None`` is a valid input value.  These cases are common
@@ -58,8 +60,8 @@ signature to be overly long and hard to read, as seen e.g. when calling
 Additionally, two other drawbacks of many existing sentinels were brought up
 in the discussion:
 
-1. Not having a distinct type, hence it being impossible to define a strict
-   type signature for a function where the sentinel is a default value
+1. Not having a distinct type, hence it being impossible to define strict
+   type signatures functions with sentinels as default values
 2. Incorrect behavior after being copied or unpickled, due to a separate
    instance being created and thus comparisons using ``is`` failing
 
@@ -273,35 +275,31 @@ Additionally, using classes this way is unusual and could be confusing.
 Define a recommended "standard" idiom, without supplying an implementation
 --------------------------------------------------------------------------
 
-Most common exiting idioms have significant drawbacks.
+Most common exiting idioms have significant drawbacks.  So far, no idiom
+has been found that is clear and concise while avoiding these drawbacks.
 
-The idiom which is equivalent to the suggested reference implementation is a
-bit long and fragile for something that would be recommended to be widely
-used.
-
-Finally, in the poll on this subject [#poll]_, recommending an idiom very
-similar to the one equivalent to the suggested implementation was voted for
-by only 25% of the voters.  Other options for recommending an idiom received
-even less votes.
+Also, in the poll on this subject [#poll]_, the options for recommending an
+idiom were unpopular, with the highest-voted option being voted for by only
+25% of the voters.
 
 
 Open Issues
 ===========
 
 * To which module should the new ``sentinel`` class decorator be added?
-* Perhaps the "sentinel factory" implementation is better, since using it is
-  much simpler?  The drawback may not be significant considering that
-  inspecting the stack frame to find the name of a module a function was
-  called from is already done by at least 3 prominent tools in the stdlib
+* The support for copying/unpickling only works when defined in a module's
+  scope, but not in a class scope or in a function.  Is this acceptable and
+  should just be documented?  Is this a significant issue?  Are there ways
+  to avoid this issue?
 
 
 References
 ==========
 
+.. [#reference-github-repo] `Reference implementation at the taleinat/python-stdlib-sentinels GitHub repo <https://github.com/taleinat/python-stdlib-sentinels>`_
 .. [#python-dev-thread] Python-Dev mailing list: `The repr of a sentinel <https://mail.python.org/archives/list/python-dev@python.org/thread/ZLVPD2OISI7M4POMTR2FCQTE6TPMPTO3/>`_
 .. [#list-of-sentinels-in-stdlib] Python-Dev mailing list: `"The stdlib contains tons of sentinels" <https://mail.python.org/archives/list/python-dev@python.org/message/JBYXQH3NV3YBF7P2HLHB5CD6V3GVTY55/>`_
 .. [#poll] discuss.python.org Poll: `Sentinel Values in the Stdlib <https://discuss.python.org/t/sentinel-values-in-the-stdlib/8810/>`_
-.. [#reference-github-repo] `Reference implementation at the taleinat/python-stdlib-sentinels GitHub repo <https://github.com/taleinat/python-stdlib-sentinels>`_
 .. [5] `bpo-44123: Make function parameter sentinel values true singletons <https://bugs.python.org/issue44123>`_
 .. [6] `The "sentinels" package on PyPI <https://pypi.org/project/sentinels/>`_
 .. [7] `The "sentinel" package on PyPI <https://pypi.org/project/sentinel/>`_
