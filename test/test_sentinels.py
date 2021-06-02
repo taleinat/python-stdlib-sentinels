@@ -6,7 +6,7 @@ import unittest
 
 
 sent1 = sentinel('sent1')
-sent2 = sentinel('sent2')
+sent2 = sentinel('sent2', repr='test_sentinels.sent2')
 
 
 class TestSentinel(unittest.TestCase):
@@ -28,10 +28,14 @@ class TestSentinel(unittest.TestCase):
 
     def test_repr(self):
         self.assertEqual(repr(sent1), '<sent1>')
+        self.assertEqual(repr(sent2), 'test_sentinels.sent2')
 
     def test_type(self):
         self.assertIsInstance(sent1, type(sent1))
+        self.assertIsInstance(sent2, type(sent2))
         self.assertIn('sent1', repr(type(sent1)))
+        self.assertNotIn('sent1', repr(type(sent2)))
+        self.assertIsNot(type(sent1), type(sent2))
 
     def test_copy(self):
         self.assertIs(sent1, copy.copy(sent1))
