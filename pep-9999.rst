@@ -106,12 +106,12 @@ all of these criteria (see `Reference Implementation`_).
 
 This implementation is built using ideas from the implementations of ``Enum``
 and ``namedtuple``.  In order for things like pickling and copying to work,
-this stack frame is inspected in order to figure out which module the function
+the stack frame is inspected to determine which module the function
 is called from.  Also, the generated class's name is set to ``name.__class__``
 for the pickling and copying mechanisms to use.  Stack inspection for this
 purpose is already employed in the implementations of ``namedtuple``,
 ``enum.Enum`` and the ``logging`` module, which shows that using such methods
-to implement a clear, simple interface is acceptable.
+to implement a clear, simple interface is an established practice.
 
 
 Specification
