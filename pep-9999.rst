@@ -283,10 +283,20 @@ Open Issues
 ===========
 
 * To which module should the new ``sentinel`` class decorator be added?
-* The support for copying/unpickling only works when defined in a module's
-  scope, but not in a class scope or in a function.  Is this acceptable and
-  should just be documented?  Is this a significant issue?  Are there ways
-  to avoid this issue?
+
+
+Additional Notes
+================
+
+* The support for copying/unpickling works when defined in a module's scope or
+  a (possibly nested) class's scope.  Note that in the latter case, the name
+  provided as the first parameter must be the fully-qualified name of the
+  variable referencing the sentinel relative to the module:
+
+::
+
+    class MyClass:
+        NotGiven = sentinel('MyClass.NotGiven', repr='<NotGiven>')
 
 
 References
