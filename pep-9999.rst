@@ -158,11 +158,7 @@ The reference implementation is found in a dedicated GitHub repo
         cls.__module__ = sys._getframe(1).f_globals.get('__name__', '__main__')
 
         sentinel = cls()
-
-        def __new__(self, *args, **kwargs):
-            return sentinel
-        __new__.__qualname__ = f'{class_name}.__new__'
-        cls.__new__ = __new__
+        cls.__new__ = lambda cls: sentinel
 
         return sentinel
 
