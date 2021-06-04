@@ -34,7 +34,7 @@ def sentinel(
             module = _get_parent_frame().f_globals.get('__name__', '__main__')
         except (AttributeError, ValueError):
             pass
-    class_name = _get_type_name(name, module)
+    class_name = _sys.intern(_get_type_name(name, module))
 
     class_namespace = {
         '__repr__': lambda self: repr,
