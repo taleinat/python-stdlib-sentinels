@@ -5,28 +5,6 @@ from typing import Optional
 __all__ = ['sentinel']
 
 
-if hasattr(_sys, '_getframe'):
-    _get_parent_frame = lambda: _sys._getframe(2)
-else:  #pragma: no cover
-    def _get_parent_frame():
-        """Return the frame object for the caller's parent stack frame."""
-        try:
-            raise Exception
-        except Exception:
-            return _sys.exc_info()[2].tb_frame.f_back.f_back
-
-
-def _get_type_name(
-        sentinel_qualname: str,
-        module_name: Optional[str] = None,
-) -> str:
-    return (
-        '_sentinel_type__'
-        f'{module_name.replace(".", "_") + "__" if module_name else ""}'
-        f'{sentinel_qualname.replace(".", "_")}'
-    )
-
-
 def sentinel(
         name: str,
         repr: Optional[str] = None,
@@ -58,3 +36,25 @@ def sentinel(
     cls.__new__ = __new__
 
     return sentinel
+
+
+if hasattr(_sys, '_getframe'):
+    _get_parent_frame = lambda: _sys._getframe(2)
+else:  #pragma: no cover
+    def _get_parent_frame():
+        """Return the frame object for the caller's parent stack frame."""
+        try:
+            raise Exception
+        except Exception:
+            return _sys.exc_info()[2].tb_frame.f_back.f_back
+
+
+def _get_type_name(
+        sentinel_qualname: str,
+        module_name: Optional[str] = None,
+) -> str:
+    return (
+        '_sentinel_type__'
+        f'{module_name.replace(".", "_") + "__" if module_name else ""}'
+        f'{sentinel_qualname.replace(".", "_")}'
+    )
