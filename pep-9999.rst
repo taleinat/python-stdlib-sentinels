@@ -130,18 +130,12 @@ Reference Implementation
 The reference implementation is found in a dedicated GitHub repo
 [#reference-github-repo]_.  A simplified version follows::
 
-    def _get_type_name():
-        with _get_type_name.lock:
-            _get_type_name.counter += 1
-        return f'_sentinel_type_{_get_type_name.counter}_'
-    _get_type_name.counter = 0
-    _get_type_name.lock = _threading.Lock()
-
     def sentinel(name, repr=None):
         """Create a unique sentinel object."""
         repr = repr or f'<{name}>'
 
-        class_name = _get_type_name()
+        module = _get_parent_frame().f_globals.get('__name__', '__main__')
+        class_name = _get_type_name(name, module)
         class_namespace = {
             '__repr__': lambda self: repr,
         }
@@ -153,6 +147,11 @@ The reference implementation is found in a dedicated GitHub repo
         cls.__new__ lambda cls: sentinel
 
         return sentinel
+
+    def _get_type_name(sentinel_qualname, module_name):
+        return '__'.join(['_sentinel_type',
+                          module_name.replace('.', '_'),
+                          sentinel_qualname.replace('.', '_')])
 
 
 Rejected Ideas

@@ -1,5 +1,5 @@
 import sys as _sys
-import threading as _threading
+from typing import Optional
 
 
 __all__ = ['sentinel']
@@ -16,20 +16,33 @@ else:  #pragma: no cover
             return _sys.exc_info()[2].tb_frame.f_back.f_back
 
 
-def _get_type_name():
-    with _get_type_name.lock:
-        _get_type_name.counter += 1
-    return f'_sentinel_type_{_get_type_name.counter}_'
-_get_type_name.counter = 0
-_get_type_name.lock = _threading.Lock()
+def _get_type_name(
+        sentinel_qualname: str,
+        module_name: Optional[str] = None,
+) -> str:
+    return (
+        '_sentinel_type__'
+        f'{module_name.replace(".", "_") + "__" if module_name else ""}'
+        f'{sentinel_qualname.replace(".", "_")}'
+    )
 
 
-def sentinel(name, repr=None):
+def sentinel(
+        name: str,
+        repr: Optional[str] = None,
+        module: Optional[str] = None,
+):
     """Create a unique sentinel object."""
     name = _sys.intern(str(name))
     repr = repr or f'<{name}>'
 
-    class_name = _get_type_name()
+    if module is None:
+        try:
+            module = _get_parent_frame().f_globals.get('__name__', '__main__')
+        except (AttributeError, ValueError):
+            pass
+    class_name = _get_type_name(name, module)
+
     class_namespace = {
         '__repr__': lambda self: repr,
     }
