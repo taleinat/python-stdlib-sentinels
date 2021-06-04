@@ -33,8 +33,6 @@ class TestSentinel(unittest.TestCase):
     def test_type(self):
         self.assertIsInstance(sent1, type(sent1))
         self.assertIsInstance(sent2, type(sent2))
-        self.assertIn('sent1', repr(type(sent1)))
-        self.assertNotIn('sent1', repr(type(sent2)))
         self.assertIsNot(type(sent1), type(sent2))
 
     def test_copy(self):
@@ -43,10 +41,6 @@ class TestSentinel(unittest.TestCase):
 
     def test_pickle_roundtrip(self):
         self.assertIs(sent1, pickle.loads(pickle.dumps(sent1)))
-
-    def test_module_parameter(self):
-        sentinel_with_module = sentinel('sent', module='unittest')
-        self.assertEqual(sentinel_with_module.__module__, 'unittest')
 
 
 if __name__ == '__main__':

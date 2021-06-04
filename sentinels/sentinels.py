@@ -1,4 +1,5 @@
 import sys as _sys
+import threading as _threading
 
 
 __all__ = ['sentinel']
@@ -15,32 +16,30 @@ else:  #pragma: no cover
             return _sys.exc_info()[2].tb_frame.f_back.f_back
 
 
-def sentinel(name, repr=None, module=None):
+def _get_type_name():
+    with _get_type_name.lock:
+        _get_type_name.counter += 1
+    return f'_sentinel_type_{_get_type_name.counter}_'
+_get_type_name.counter = 0
+_get_type_name.lock = _threading.Lock()
+
+
+def sentinel(name, repr=None):
     """Create a unique sentinel object."""
     name = _sys.intern(str(name))
     repr = repr or f'<{name}>'
 
-    # This is a hack to get copying and unpickling to work without setting the
-    # class as a module attribute.
-    class_name = f'{name}.__class__'
+    class_name = _get_type_name()
     class_namespace = {
         '__repr__': lambda self: repr,
     }
     cls = type(class_name, (), class_namespace)
-
-    # For pickling to work, the class's __module__ variable needs to be set to
-    # the name of the module where the sentinel is defined.
-    if module is None:
-        try:
-            module = _get_parent_frame().f_globals.get('__name__', '__main__')
-        except (AttributeError, ValueError):
-            pass
-    if module is not None:
-        cls.__module__ = module
+    cls.__module__ = __name__
+    globals()[class_name] = cls
 
     sentinel = cls()
 
-    def __new__(self):
+    def __new__(cls):
         return sentinel
     __new__.__qualname__ = f'{class_name}.__new__'
     cls.__new__ = __new__
