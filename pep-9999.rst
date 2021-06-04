@@ -110,7 +110,7 @@ all of these criteria (see `Reference Implementation`_).
 Specification
 =============
 
-A new ``sentinel`` function will be added to the *<to be decided...>* module.
+A new ``sentinel`` function will be added to a new ``sentinels`` module.
 It will accept a single required argument, the name of the sentinel object,
 and a single optional argument, the repr of the object.
 
@@ -268,12 +268,6 @@ has been found that is clear and concise while avoiding these drawbacks.
 Also, in the poll on this subject [#poll]_, the options for recommending an
 idiom were unpopular, with the highest-voted option being voted for by only
 25% of the voters.
-
-
-Open Issues
-===========
-
-* To which module should the new ``sentinel`` class decorator be added?
 
 
 Additional Notes
