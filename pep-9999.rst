@@ -8,13 +8,11 @@ Created: 22-May-2021
 Post-History: 22-May-2021
 
 
+TL;DR: See the `Specification`_ and `Reference Implementation`_.
+
+
 Abstract
 ========
-
-This PEP suggests adding a utility for defining sentinel values, to be used
-in the stdlib and made publicly available as part of the stdlib.
-
-TL;DR: See the `Specification`_ and `Reference Implementation`_.
 
 Unique placeholder values, widely known as "sentinel values", are useful in
 Python programs for several things, such as default values for function
@@ -24,12 +22,12 @@ over the years, but uncommon enough that there hasn't been a clear need for
 standardization.  However, the common implementations, including some in the
 stdlib, suffer from several significant drawbacks.
 
+This PEP suggests adding a utility for defining sentinel values, to be used
+in the stdlib and made publicly available as part of the stdlib.
+
 Note: Changing all existing sentinels in the stdlib to be implemented this
 way is not deemed necessary, and whether to do so is left to the discretion
 of each maintainer.
-
-This PEP and the initial implementation are drafted in a dedicated GitHub
-repo [#reference-github-repo]_.
 
 
 Motivation
@@ -288,15 +286,16 @@ Open Issues
 Additional Notes
 ================
 
+* This PEP and the initial implementation are drafted in a dedicated GitHub
+  repo [#reference-github-repo]_.
+
 * The support for copying/unpickling works when defined in a module's scope or
   a (possibly nested) class's scope.  Note that in the latter case, the name
   provided as the first parameter must be the fully-qualified name of the
-  variable referencing the sentinel relative to the module:
+  variable referencing the sentinel relative to the module::
 
-::
-
-    class MyClass:
-        NotGiven = sentinel('MyClass.NotGiven', repr='<NotGiven>')
+      class MyClass:
+          NotGiven = sentinel('MyClass.NotGiven', repr='<NotGiven>')
 
 
 References
