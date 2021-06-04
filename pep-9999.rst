@@ -292,7 +292,7 @@ Additional Notes
 * The support for copying/unpickling works when defined in a module's scope or
   a (possibly nested) class's scope.  Note that in the latter case, the name
   provided as the first parameter must be the fully-qualified name of the
-  variable referencing the sentinel relative to the module::
+  variable in the module::
 
       class MyClass:
           NotGiven = sentinel('MyClass.NotGiven', repr='<NotGiven>')
