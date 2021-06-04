@@ -124,6 +124,14 @@ and a single optional argument, the repr of the object.
     mymodule.MISSING
 
 
+A third optional argument, the name of the module where the sentinel is
+defined, exists to be used to support cases where the name of the module
+cannot be found by inspecting the stack frame.  This is identical to the
+pattern used by ``collections.namedtuple``.  (The name of the module is
+used to choose a unique name for the class generated for the new sentinel,
+which is set as an attribute of the ``sentinels`` module.)
+
+
 Reference Implementation
 ========================
 
@@ -135,7 +143,7 @@ The reference implementation is found in a dedicated GitHub repo
         repr = repr or f'<{name}>'
 
         module = _get_parent_frame().f_globals.get('__name__', '__main__')
-        class_name = _get_type_name(name, module)
+        class_name = _get_class_name(name, module)
         class_namespace = {
             '__repr__': lambda self: repr,
         }
@@ -148,7 +156,7 @@ The reference implementation is found in a dedicated GitHub repo
 
         return sentinel
 
-    def _get_type_name(sentinel_qualname, module_name):
+    def _get_class_name(sentinel_qualname, module_name):
         return '__'.join(['_sentinel_type',
                           module_name.replace('.', '_'),
                           sentinel_qualname.replace('.', '_')])

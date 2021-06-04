@@ -34,7 +34,7 @@ def sentinel(
             module = _get_parent_frame().f_globals.get('__name__', '__main__')
         except (AttributeError, ValueError):
             pass
-    class_name = _sys.intern(_get_type_name(name, module))
+    class_name = _sys.intern(_get_class_name(name, module))
 
     class_namespace = {
         '__repr__': lambda self: repr,
@@ -64,7 +64,7 @@ else:  #pragma: no cover
             return _sys.exc_info()[2].tb_frame.f_back.f_back
 
 
-def _get_type_name(
+def _get_class_name(
         sentinel_qualname: str,
         module_name: Optional[str] = None,
 ) -> str:
