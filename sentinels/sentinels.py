@@ -10,9 +10,24 @@ def sentinel(
         repr: Optional[str] = None,
         module: Optional[str] = None,
 ):
-    """Create a unique sentinel object."""
+    """Create a unique sentinel object.
+
+    *name* should be the fully-qualified name of the variable to which the
+    return value shall be assigned.
+
+    *repr*, if supplied, will be used for the repr of the sentinel object.
+    If not provided, "<name>" will be used (with any leading class names
+    removed).
+
+    *module*, if supplied, will be used as the module name for the purpose
+    of setting a unique name for the sentinels unique class.  The class is
+    set as an attribute of this name on the "sentinels" module, so that it
+    may be found by the pickling mechanism.  In most cases, the module name
+    does not need to be provided, and it will be found by inspecting the
+    stack frame.
+    """
     name = _sys.intern(str(name))
-    repr = repr or f'<{name}>'
+    repr = repr or f'<{name.rsplit(".", 1)[-1]}>'
 
     if module is None:
         try:
