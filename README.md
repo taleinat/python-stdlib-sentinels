@@ -1,7 +1,7 @@
 # Sentinels
 
 This is a reference implementation of a utility for the definition of
-sentinel values in Python.  This also includes a [draft PEP](pep-9999.rst) for
+sentinel values in Python.  This also includes a [draft PEP](pep-0661.rst) for
 the inclusion of this utility in the Python standard library.
 
 ## Usage
