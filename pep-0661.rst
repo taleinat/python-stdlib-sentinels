@@ -1,4 +1,4 @@
-PEP: 9999
+PEP: 661
 Title: Sentinel Values
 Author: Tal Einat <tal@python.org>
 Status: Draft
