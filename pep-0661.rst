@@ -36,17 +36,12 @@ Motivation
 In May 2021, a question was brought up on the python-dev mailing list
 [#python-dev-thread]_ about how to better implement a sentinel value for
 ``traceback.print_exception``.  The existing implementation used the
-following common idiom:
-
-::
+following common idiom::
 
     _sentinel = object()
 
-However, this object has an overly verbose repr, causing the function's
-signature to be overly long and hard to read, as seen e.g. when calling
-``help()``:
-
-::
+However, this object has an uninformative and overly verbose repr, causing the
+function's signature to be overly long and hard to read::
 
     >>> help(traceback.print_exception)
     Help on function print_exception in module traceback:
