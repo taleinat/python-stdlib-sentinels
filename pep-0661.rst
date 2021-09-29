@@ -300,6 +300,7 @@ References
 .. [5] `bpo-44123: Make function parameter sentinel values true singletons <https://bugs.python.org/issue44123>`_
 .. [6] `The "sentinels" package on PyPI <https://pypi.org/project/sentinels/>`_
 .. [7] `The "sentinel" package on PyPI <https://pypi.org/project/sentinel/>`_
+.. [8] `Discussion thread about type signatures for these sentinels on the typing-sig mailing list <https://mail.python.org/archives/list/typing-sig@python.org/thread/NDEJ7UCDPINP634GXWDARVMTGDVSNBKV/#LVCPTY26JQJW7NKGKGAZXHQKWVW7GOGL>`_
 
 
 Copyright
