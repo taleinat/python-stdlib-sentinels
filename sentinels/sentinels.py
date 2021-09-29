@@ -8,7 +8,6 @@ __all__ = ['sentinel']
 def sentinel(
         name: str,
         repr: Optional[str] = None,
-        module: Optional[str] = None,
 ):
     """Create a unique sentinel object.
 
@@ -18,34 +17,30 @@ def sentinel(
     *repr*, if supplied, will be used for the repr of the sentinel object.
     If not provided, "<name>" will be used (with any leading class names
     removed).
-
-    *module*, if supplied, will be used as the module name for the purpose
-    of setting a unique name for the sentinels unique class.  The class is
-    set as an attribute of this name on the "sentinels" module, so that it
-    may be found by the pickling mechanism.  In most cases, the module name
-    does not need to be provided, and it will be found by inspecting the
-    stack frame.
     """
+    try:
+        module_globals = _get_parent_frame().f_globals
+        module = module_globals.get('__name__', '__main__')
+    except (AttributeError, ValueError):
+        # Store the class in the sentinels module namespace.
+        module_globals = globals()
+        module = __name__
+
     name = _sys.intern(str(name))
     repr = repr or f'<{name.rsplit(".", 1)[-1]}>'
-
-    if module is None:
-        try:
-            module = _get_parent_frame().f_globals.get('__name__', '__main__')
-        except (AttributeError, ValueError):
-            pass
     class_name = _sys.intern(_get_class_name(name, module))
 
     class_namespace = {
         '__repr__': lambda self: repr,
     }
     cls = type(class_name, (), class_namespace)
-    cls.__module__ = __name__
-    globals()[class_name] = cls
+    cls.__module__ = module
+    module_globals[class_name] = cls
+    del module_globals  # Avoid a reference cycle.
 
     sentinel = cls()
 
-    def __new__(cls):
+    def __new__(cls_):
         return sentinel
     __new__.__qualname__ = f'{class_name}.__new__'
     cls.__new__ = __new__
@@ -54,7 +49,9 @@ def sentinel(
 
 
 if hasattr(_sys, '_getframe'):
-    _get_parent_frame = lambda: _sys._getframe(2)
+    def _get_parent_frame():
+        """Return the frame object for the caller's parent stack frame."""
+        return _sys._getframe(2)
 else:  #pragma: no cover
     def _get_parent_frame():
         """Return the frame object for the caller's parent stack frame."""
@@ -70,6 +67,6 @@ def _get_class_name(
 ) -> str:
     return (
         '_sentinel_type__'
-        f'{module_name.replace(".", "_") + "__" if module_name else ""}'
+        f'{(module_name.replace(".", "_") + "__") if module_name else ""}'
         f'{sentinel_qualname.replace(".", "_")}'
     )

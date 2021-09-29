@@ -15,7 +15,7 @@ TL;DR: See the `Specification`_ and `Reference Implementation`_.
 Abstract
 ========
 
-Unique placeholder values, widely known as "sentinel values", are useful in
+Unique placeholder values, commonly known as "sentinel values", are useful in
 Python programs for several things, such as default values for function
 arguments where ``None`` is a valid input value.  These cases are common
 enough for several idioms for implementing such "sentinels" to have arisen
@@ -121,14 +121,6 @@ and a single optional argument, the repr of the object.
     mymodule.MISSING
 
 
-A third optional argument, the name of the module where the sentinel is
-defined, exists to be used to support cases where the name of the module
-cannot be found by inspecting the stack frame.  This is identical to the
-pattern used by ``collections.namedtuple``.  (The name of the module is
-used to choose a unique name for the class generated for the new sentinel,
-which is set as an attribute of the ``sentinels`` module.)
-
-
 Reference Implementation
 ========================
 
@@ -145,11 +137,11 @@ The reference implementation is found in a dedicated GitHub repo
             '__repr__': lambda self: repr,
         }
         cls = type(class_name, (), class_namespace)
-        cls.__module__ = __name__
-        globals()[class_name] = cls
+        cls.__module__ = module
+        _get_parent_frame().f_globals[class_name] = cls
 
         sentinel = cls()
-        cls.__new__ lambda cls: sentinel
+        cls.__new__ = lambda cls_: sentinel
 
         return sentinel
 
@@ -256,10 +248,10 @@ To have a clear repr, one could define ``__repr__``:
     class NotGiven(metaclass=SentinelMeta): pass
 
 However, all such implementations don't have a dedicated type for the
-sentinel, which is considered desirable.  A dedicated type could be created
-by a meta-class or class decorator, but at that point the implementation would
-become much more complex and loses its advantages over the chosen
-implementation.
+sentinel, which is considered desirable for strict typing.  A dedicated type
+could be created by a meta-class or class decorator, but at that point the
+implementation would become much more complex and loses its advantages over
+the chosen implementation.
 
 Additionally, using classes this way is unusual and could be confusing.
 
