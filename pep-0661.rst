@@ -1,11 +1,13 @@
 PEP: 661
 Title: Sentinel Values
 Author: Tal Einat <tal@python.org>
+Discussions-To: https://discuss.python.org/t/pep-661-sentinel-values/9126
 Status: Draft
 Type: Standards Track
 Content-Type: text/x-rst
 Created: 06-Jun-2021
 Post-History: 06-Jun-2021
+
 
 TL;DR: See the `Specification`_ and `Reference Implementation`_.
 
