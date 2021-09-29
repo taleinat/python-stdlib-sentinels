@@ -120,6 +120,28 @@ and a single optional argument, the repr of the object.
     >>> MISSING
     mymodule.MISSING
 
+Checking if a value is such a sentinel *should* be done using the ``is``
+operator, as is recommended for ``None``.  Equality checks using ``==`` will
+also work as expected, returning ``True`` only when the object is compared
+with itself.
+
+The name should be set to the name of the variable used to reference the
+object, as in the examples above.  Otherwise, the sentinel object won't be
+able to survive copying or pickling+unpickling while retaining the above
+described behavior.  Note, that when defined in a class scope, the name must
+be the fully-qualified name of the variable in the module, for example::
+
+      class MyClass:
+          NotGiven = sentinel('MyClass.NotGiven')
+
+Type annotations for sentinel values will use `typing.Literal`_.
+For example::
+
+    def foo(value: int | Literal[NotGiven]) -> None:
+        ...
+
+.. _typing.Literal: https://docs.python.org/3/library/typing.html#typing.Literal
+
 
 Reference Implementation
 ========================
@@ -149,6 +171,15 @@ The reference implementation is found in a dedicated GitHub repo
         return '__'.join(['_sentinel_type',
                           module_name.replace('.', '_'),
                           sentinel_qualname.replace('.', '_')])
+
+
+Note that a dedicated class is created automatically for each sentinel object.
+This class is assigned to the namespace of the module from which the
+``sentinel()`` call was made, or to that of the ``sentinels`` module itself as
+a fallback.  These classes have long names comprised of several parts to
+ensure their uniqueness.  However, these names usually wouldn't be used, since
+type annotations should use ``Literal[]`` as described above, and identity
+checks should be preferred over type checks.
 
 
 Rejected Ideas
@@ -310,4 +341,3 @@ CC0-1.0-Universal license, whichever is more permissive.
    fill-column: 70
    coding: utf-8
    End:
-
