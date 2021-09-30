@@ -15,13 +15,29 @@ TL;DR: See the `Specification`_ and `Reference Implementation`_.
 Abstract
 ========
 
-Unique placeholder values, commonly known as "sentinel values", are useful in
-Python programs for several things, such as default values for function
-arguments where ``None`` is a valid input value.  These cases are common
-enough for several idioms for implementing such "sentinels" to have arisen
-over the years, but uncommon enough that there hasn't been a clear need for
-standardization.  However, the common implementations, including some in the
-stdlib, suffer from several significant drawbacks.
+Unique placeholder values, commonly known as "sentinel values", are common in
+programming.  They have many uses, such as for:
+
+* Default values for function arguments, for when a value was not given::
+
+    def foo(value=None):
+        ...
+
+* Return values from functions when something is not found or unavailable::
+
+    >>> "abc".find("d")
+    -1
+
+* Missing pieces of data, such as NULL in relational databases or
+  "N/A" ("not available") in spreadsheets
+
+Python has the special value ``None``, which is intended to be used as such
+a sentinel value in most cases.  However, sometimes an alternative sentinel
+value is needed, usually when it needs to be distinct from ``None``.  These
+cases are common enough that several idioms for implementing such sentinels
+have arisen over the years, but uncommon enough that there hasn't been a
+clear need for standardization.  However, the common implementations,
+including some in the stdlib, suffer from several significant drawbacks.
 
 This PEP suggests adding a utility for defining sentinel values, to be used
 in the stdlib and made publicly available as part of the stdlib.
@@ -60,10 +76,11 @@ in the discussion:
    instance being created and thus comparisons using ``is`` failing
 
 In the ensuing discussion, Victor Stinner supplied a list of currently used
-sentinel values in the Python standard library [#list-of-sentinels-in-stdlib]_.
-This showed that the need for sentinels is fairly common, that there are
-various implementation methods used even within the stdlib, and that many of
-these suffer from at least one of the aforementioned drawbacks.
+sentinel values in the Python standard library
+[#list-of-sentinels-in-stdlib]_.  This showed that the need for sentinels is
+fairly common, that there are various implementation methods used even
+within the stdlib, and that many of these suffer from at least one of the
+three aforementioned drawbacks.
 
 The discussion did not lead to any clear consensus on whether a standard
 implementation method is needed or desirable, whether the drawbacks mentioned
@@ -192,7 +209,7 @@ Use ``NotGiven = object()``
 This suffers from all of the drawbacks mentioned in the `Rationale`_ section.
 
 
-Add a single new sentinel value, e.g. ``MISSING`` or ``Sentinel``
+Add a single new sentinel value, such as ``MISSING`` or ``Sentinel``
 -----------------------------------------------------------------
 
 Since such a value could be used for various things in various places, one
