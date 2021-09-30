@@ -221,9 +221,7 @@ as confidently used in all cases, unlike a dedicated, distinct value.
 Use a single-valued enum
 ------------------------
 
-The suggested idiom is:
-
-::
+The suggested idiom is::
 
     class NotGivenType(Enum):
         NotGiven = 'NotGiven'
@@ -240,15 +238,13 @@ Finally, this option was the least popular among the nine options in the poll
 A sentinel class decorator
 --------------------------
 
-The suggested interface:
-
-::
+The suggested interface::
 
     @sentinel(repr='<NotGiven>')
     class NotGivenType: pass
     NotGiven = NotGivenType()
 
-While this allowed for a very simple and clear implementation, the interface
+While this allows for a very simple and clear implementation, the interface
 is too verbose, repetitive, and difficult to remember.
 
 
@@ -258,33 +254,27 @@ Using class objects
 Since classes are inherently singletons, using a class as a sentinel value
 makes sense and allows for a simple implementation.
 
-The simplest version of this idiom is:
-
-::
+The simplest version of this idiom is::
 
    class NotGiven: pass
 
-To have a clear repr, one could define ``__repr__``:
-
-::
-
-    class NotGiven:
-        def __repr__(self):
-            return '<NotGiven>'
-
-... or use a meta-class:
-
-::
+To have a clear repr, one would need to use a meta-class::
 
     class NotGiven(metaclass=SentinelMeta): pass
 
-However, all such implementations don't have a dedicated type for the
-sentinel, which is considered desirable for strict typing.  A dedicated type
-could be created by a meta-class or class decorator, but at that point the
-implementation would become much more complex and loses its advantages over
-the chosen implementation.
+... or a class decorator::
 
-Additionally, using classes this way is unusual and could be confusing.
+    @Sentinel
+    class NotGiven: pass
+
+Using classes this way is unusual and could be confusing.  It would also cause
+such sentinel values to have some unexpected behavior, such as being callable.
+
+Furthermore, such implementations wouldn't have a distinct type for the
+sentinel, which is desirable for strict typing.  (A dedicated type could be
+created by a meta-class or class decorator, but at that point the
+implementation would become much more complex and loses its advantages over
+the chosen implementation.)
 
 
 Define a recommended "standard" idiom, without supplying an implementation
