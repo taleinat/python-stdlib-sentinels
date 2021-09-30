@@ -30,10 +30,19 @@ def sentinel(
     repr = repr or f'<{name.split(".")[-1]}>'
     class_name = _sys.intern(_get_class_name(name, module))
 
+    # If a sentinel with the same name was already defined in the module,
+    # return it.
+    if class_name in module_globals:
+        return module_globals[class_name]()
+
     class_namespace = {
         '__repr__': lambda self: repr,
     }
     cls = type(class_name, (), class_namespace)
+
+    # For copying and pickling+unpickling to work, the class's __module__
+    # is set to the name of a module where the class may be found by its
+    # name.
     cls.__module__ = module
     module_globals[class_name] = cls
     del module_globals  # Avoid a reference cycle.

@@ -142,14 +142,13 @@ operator, as is recommended for ``None``.  Equality checks using ``==`` will
 also work as expected, returning ``True`` only when the object is compared
 with itself.
 
-The name should be set to the name of the variable used to reference the
-object, as in the examples above.  Otherwise, the sentinel object won't be
-able to survive copying or pickling+unpickling while retaining the above
-described behavior.  Note, that when defined in a class scope, the name must
-be the fully-qualified name of the variable in the module, for example::
+The names of sentinels should be unique within each module.  When calling
+``sentinel()``in a module where a sentinel with that name was already
+defined, the existing sentinel with that name will be returned.  Sentinels
+with the same name in different modules will be distinct from each other.
 
-      class MyClass:
-          NotGiven = sentinel('MyClass.NotGiven')
+Creating a copy of a sentinel object, such as by using ``copy.copy()`` or by
+pickling and unpickling, will return the same object in normal circumstances.
 
 Type annotations for sentinel values will use `typing.Literal`_.
 For example::
@@ -168,11 +167,17 @@ The reference implementation is found in a dedicated GitHub repo
 
     def sentinel(name, repr=None):
         """Create a unique sentinel object."""
-        repr = repr or f'<{name}>'
+        repr = repr or f'<{name.split(".")[-1]}>'
 
-        # Create a unique class for the sentinel.
-        module = _get_parent_frame().f_globals.get('__name__', '__main__')
+        module_globals = _get_parent_frame().f_globals
+        module = module_globals.get('__name__', '__main__')
         class_name = _get_class_name(name, module)
+
+        # If a sentinel with the same name was already defined in the module,
+        # return it.
+        if class_name in module_globals:
+            return module_globals[class_name]()
+
         class_namespace = {
             '__repr__': lambda self: repr,
         }
@@ -182,7 +187,7 @@ The reference implementation is found in a dedicated GitHub repo
         # is set to the name of a module where the class may be found by its
         # name.
         cls.__module__ = module
-        _get_parent_frame().f_globals[class_name] = cls
+        module_globals[class_name] = cls
 
         sentinel = cls()
 
@@ -319,13 +324,20 @@ Additional Notes
 * This PEP and the initial implementation are drafted in a dedicated GitHub
   repo [#reference-github-repo]_.
 
-* The support for copying/unpickling works when defined in a module's scope or
-  a (possibly nested) class's scope.  Note that in the latter case, the name
-  provided as the first argument must be the fully-qualified name of the
-  variable in the module::
+* For sentinels defined in a class scope, to avoid potential name clashes,
+  consider using the fully-qualified name of the variable in the module.  Only
+  the part of the name after the last period will be used for the default
+  repr.  For example::
 
-      class MyClass:
-          NotGiven = sentinel('MyClass.NotGiven', repr='<NotGiven>')
+      >>> class MyClass:
+      ...    NotGiven = sentinel('MyClass.NotGiven')
+      >>> MyClass.NotGiven
+      <NotGiven>
+
+* One should be careful when creating sentinels in a function or method, since
+  sentinels with the same name created by code in the same module will be
+  identical.  If distinct sentinel objects are needed, make sure to use
+  distinct names.
 
 
 References
