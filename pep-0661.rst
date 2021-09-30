@@ -170,16 +170,24 @@ The reference implementation is found in a dedicated GitHub repo
         """Create a unique sentinel object."""
         repr = repr or f'<{name}>'
 
+        # Create a unique class for the sentinel.
         module = _get_parent_frame().f_globals.get('__name__', '__main__')
         class_name = _get_class_name(name, module)
         class_namespace = {
             '__repr__': lambda self: repr,
         }
         cls = type(class_name, (), class_namespace)
+
+        # For copying and pickling+unpickling to work, the class's __module__
+        # is set to the name of a module where the class may be found by its
+        # name.
         cls.__module__ = module
         _get_parent_frame().f_globals[class_name] = cls
 
         sentinel = cls()
+
+        # Make the object a singleton, by having the class always return the
+        # same object.
         cls.__new__ = lambda cls_: sentinel
 
         return sentinel
