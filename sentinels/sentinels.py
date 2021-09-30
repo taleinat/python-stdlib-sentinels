@@ -27,7 +27,7 @@ def sentinel(
         module = __name__
 
     name = _sys.intern(str(name))
-    repr = repr or f'<{name.rsplit(".", 1)[-1]}>'
+    repr = repr or f'<{name.split(".")[-1]}>'
     class_name = _sys.intern(_get_class_name(name, module))
 
     class_namespace = {
