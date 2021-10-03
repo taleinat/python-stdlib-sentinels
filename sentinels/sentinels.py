@@ -1,15 +1,13 @@
 import sys as _sys
-from typing import Optional
+from threading import Lock
+from typing import final, Dict, Optional
 
 
-__all__ = ['sentinel']
+__all__ = ['Sentinel']
 
 
-def sentinel(
-        name: str,
-        repr: Optional[str] = None,
-        is_truthy: bool = True,
-):
+@final
+class Sentinel:
     """Create a unique sentinel object.
 
     *name* should be the fully-qualified name of the variable to which the
@@ -18,46 +16,69 @@ def sentinel(
     *repr*, if supplied, will be used for the repr of the sentinel object.
     If not provided, "<name>" will be used (with any leading class names
     removed).
+
+    *bool_value* is the value (True/False) used for the sentinel object in
+    boolean contexts.
+
+    *module_name*, if supplied, will be used instead of inspecting the call
+    stack to find the name of the module from which
     """
-    try:
-        module_globals = _get_parent_frame().f_globals
-        module = module_globals.get('__name__', '__main__')
-    except (AttributeError, ValueError):
-        # Store the class in the sentinels module namespace.
-        module_globals = globals()
-        module = __name__
+    _name: str
+    _repr: str
+    _module_name: str
+    _bool_value: bool
 
-    name = _sys.intern(str(name))
-    repr = repr or f'<{name.split(".")[-1]}>'
-    is_truthy = bool(is_truthy)
-    class_name = _sys.intern(_get_class_name(name, module))
+    def __new__(
+        cls,
+        name: str,
+        repr: Optional[str] = None,
+        bool_value: bool = True,
+        module_name: Optional[str] = None,
+    ):
+        name = str(name)
+        repr = repr or f'<{name.split(".")[-1]}>'
+        bool_value = bool(bool_value)
+        if not module_name:
+            try:
+                module_name = \
+                    _get_parent_frame().f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                module_name = __name__
 
-    # If a sentinel with the same name was already defined in the module,
-    # return it.
-    if class_name in module_globals:
-        return module_globals[class_name]()
+        registry_key = _sys.intern(f'{module_name}-{name}')
+        with _lock:
+            sentinel = _registry.get(registry_key, None)
+            if sentinel is None:
+                sentinel = super().__new__(cls)
+                sentinel._name = name
+                sentinel._repr = repr
+                sentinel._bool_value = bool_value
+                sentinel._module_name = module_name
 
-    class_namespace = {
-        '__repr__': lambda self: repr,
-        '__bool__': lambda self: is_truthy,
-    }
-    cls = type(class_name, (), class_namespace)
+                _registry[registry_key] = sentinel
 
-    # For copying and pickling+unpickling to work, the class's __module__
-    # is set to the name of a module where the class may be found by its
-    # name.
-    cls.__module__ = module
-    module_globals[class_name] = cls
-    del module_globals  # Avoid a reference cycle.
-
-    sentinel = cls()
-
-    def __new__(cls_):
         return sentinel
-    __new__.__qualname__ = f'{class_name}.__new__'
-    cls.__new__ = __new__
 
-    return sentinel
+    def __repr__(self):
+        return self._repr
+
+    def __bool__(self):
+        return self._bool_value
+
+    def __reduce__(self):
+        return (
+            self.__class__,
+            (
+                self._name,
+                self._repr,
+                self._bool_value,
+                self._module_name,
+            ),
+        )
+
+
+_lock = Lock()
+_registry: Dict[str, Sentinel] = {}
 
 
 if hasattr(_sys, '_getframe'):
@@ -73,12 +94,4 @@ else:  #pragma: no cover
             return _sys.exc_info()[2].tb_frame.f_back.f_back
 
 
-def _get_class_name(
-        sentinel_qualname: str,
-        module_name: Optional[str] = None,
-) -> str:
-    return (
-        '_sentinel_type__'
-        f'{(module_name.replace(".", "_") + "__") if module_name else ""}'
-        f'{sentinel_qualname.replace(".", "_")}'
-    )
+del Lock, final, Dict, Optional

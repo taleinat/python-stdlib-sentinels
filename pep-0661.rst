@@ -108,8 +108,8 @@ The criteria guiding the chosen implementation were:
    to itself but never to any other object.
 2. It should be simple to define as many distinct sentinel values as needed.
 3. The sentinel objects should have a clear and short repr.
-4. The sentinel objects should each have a *distinct* type, usable in type
-   annotations to define *strict* type signatures.
+4. It should be possible to use strict type signatures for sentinels, which
+   refer to a specific sentinel value.
 5. The sentinel objects should behave correctly after copying and/or
    unpickling.
 6. Creating a sentinel object should be a simple, straightforward one-liner.
@@ -141,8 +141,8 @@ and a two optional arguments, the repr of the object and whether it is
 Checking if a value is such a sentinel *should* be done using the ``is``
 operator, as is recommended for ``None``.  Equality checks using ``==`` will
 also work as expected, returning ``True`` only when the object is compared
-with itself.  Similarly, checking using ``if value is MISSING:`` should
-usually be preferred over checks such as ``if value:`` or ``if not value:``.
+with itself.  Identity checks such as ``if value is MISSING:`` should usually
+be used rather than boolean checks such as ``if value:`` or ``if not value:``.
 
 The names of sentinels should be unique within each module.  When calling
 ``sentinel()``in a module where a sentinel with that name was already
@@ -167,51 +167,51 @@ Reference Implementation
 The reference implementation is found in a dedicated GitHub repo
 [#reference-github-repo]_.  A simplified version follows::
 
-    def sentinel(name, repr=None):
-        """Create a unique sentinel object."""
-        repr = repr or f'<{name.split(".")[-1]}>'
+    _registry = {}
 
-        module_globals = _get_parent_frame().f_globals
-        module = module_globals.get('__name__', '__main__')
-        class_name = _get_class_name(name, module)
+    class Sentinel:
+        """Unique sentinel values."""
 
-        # If a sentinel with the same name was already defined in the module,
-        # return it.
-        if class_name in module_globals:
-            return module_globals[class_name]()
+        def __new__(cls, name, repr=None, bool_value=True, module_name=None):
+            name = str(name)
+            repr = repr or f'<{name.split(".")[-1]}>'
+            bool_value = bool(bool_value)
+            if module_name is None:
+                try:
+                    module_name = \
+                        sys._getframe(1).f_globals.get('__name__', '__main__')
+                except (AttributeError, ValueError):
+                    module_name = __name__
 
-        class_namespace = {
-            '__repr__': lambda self: repr,
-        }
-        cls = type(class_name, (), class_namespace)
+            registry_key = f'{module_name}-{name}'
+            sentinel = _registry.get(registry_key, None)
+            if sentinel is None:
+                sentinel = super().__new__(cls)
+                sentinel._name = name
+                sentinel._repr = repr
+                sentinel._bool_value = bool_value
+                sentinel._module_name = module_name
 
-        # For copying and pickling+unpickling to work, the class's __module__
-        # is set to the name of a module where the class may be found by its
-        # name.
-        cls.__module__ = module
-        module_globals[class_name] = cls
+                _registry[registry_key] = sentinel
 
-        sentinel = cls()
+            return sentinel
 
-        # Make the object a singleton, by having the class always return the
-        # same object.
-        cls.__new__ = lambda cls_: sentinel
+        def __repr__(self):
+            return self._repr
 
-        return sentinel
+        def __bool__(self):
+            return self._bool_value
 
-    def _get_class_name(sentinel_qualname, module_name):
-        return '__'.join(['_sentinel_type',
-                          module_name.replace('.', '_'),
-                          sentinel_qualname.replace('.', '_')])
-
-
-Note that a dedicated class is created automatically for each sentinel object.
-This class is assigned to the namespace of the module from which the
-``sentinel()`` call was made, or to that of the ``sentinels`` module itself as
-a fallback.  These classes have long names comprised of several parts to
-ensure their uniqueness.  However, these names usually wouldn't be used, since
-type annotations should use ``Literal[]`` as described above, and identity
-checks should be preferred over type checks.
+        def __reduce__(self):
+            return (
+                self.__class__,
+                (
+                    self._name,
+                    self._repr,
+                    self._bool_value,
+                    self._module_name,
+                ),
+            )
 
 
 Rejected Ideas
