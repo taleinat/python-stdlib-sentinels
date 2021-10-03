@@ -8,6 +8,7 @@ __all__ = ['sentinel']
 def sentinel(
         name: str,
         repr: Optional[str] = None,
+        is_truthy: bool = True,
 ):
     """Create a unique sentinel object.
 
@@ -28,6 +29,7 @@ def sentinel(
 
     name = _sys.intern(str(name))
     repr = repr or f'<{name.split(".")[-1]}>'
+    is_truthy = bool(is_truthy)
     class_name = _sys.intern(_get_class_name(name, module))
 
     # If a sentinel with the same name was already defined in the module,
@@ -37,6 +39,7 @@ def sentinel(
 
     class_namespace = {
         '__repr__': lambda self: repr,
+        '__bool__': lambda self: is_truthy,
     }
     cls = type(class_name, (), class_namespace)
 

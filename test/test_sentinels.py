@@ -42,6 +42,11 @@ class TestSentinel(unittest.TestCase):
     def test_pickle_roundtrip(self):
         self.assertIs(sent1, pickle.loads(pickle.dumps(sent1)))
 
+    def test_truthiness(self):
+        self.assertTrue(sent1)
+        self.assertTrue(sentinel('I_AM_TRUTHY'))
+        self.assertFalse(sentinel('I_AM_FALSY', is_truthy=False))
+
 
 if __name__ == '__main__':
     unittest.main()

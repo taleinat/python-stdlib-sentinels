@@ -126,7 +126,8 @@ Specification
 
 A new ``sentinel`` function will be added to a new ``sentinels`` module.
 It will accept a single required argument, the name of the sentinel object,
-and a single optional argument, the repr of the object.
+and a two optional arguments, the repr of the object and whether it is
+"truthy".
 
 ::
 
@@ -140,7 +141,8 @@ and a single optional argument, the repr of the object.
 Checking if a value is such a sentinel *should* be done using the ``is``
 operator, as is recommended for ``None``.  Equality checks using ``==`` will
 also work as expected, returning ``True`` only when the object is compared
-with itself.
+with itself.  Similarly, checking using ``if value is MISSING:`` should
+usually be preferred over checks such as ``if value:`` or ``if not value:``.
 
 The names of sentinels should be unique within each module.  When calling
 ``sentinel()``in a module where a sentinel with that name was already
