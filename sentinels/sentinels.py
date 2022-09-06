@@ -1,12 +1,31 @@
 import sys as _sys
-from threading import Lock
-from typing import final, Dict, Optional
+from threading import Lock as _Lock
 
 
 __all__ = ['Sentinel']
 
 
-@final
+# Design and implementation decisions:
+#
+# The first implementations created a dedicated class for each instance.
+# However, once it was decided to use Sentinel for type signatures, there
+# was no longer a need for a dedicated class for each sentinel value on order
+# to enable strict type signatures.  Since class objects consume a relatively
+# large amount of memory, the implementation was changed to avoid this.
+#
+# With this change, the mechanism used for unpickling/copying objects needed
+# to be changed too, since we could no longer count on each dedicated class
+# simply returning its singleton instance as before.  __reduce__ can return
+# a string, upon which an attribute with that name is looked up in the module
+# and returned.  However, that would have meant that pickling/copying support
+# would depend on the "name" argument being exactly the name of the variable
+# used in the module, and simply wouldn't work for sentinels created in
+# functions/methods.  Instead, a registry for sentinels was added, where all
+# sentinel objects are stored keyed by their name + module name.  This is used
+# to look up existing sentinels both during normal object creation and during
+# copying/unpickling.
+
+
 class Sentinel:
     """Create a unique sentinel object.
 
@@ -17,53 +36,46 @@ class Sentinel:
     If not provided, "<name>" will be used (with any leading class names
     removed).
 
-    *bool_value* is the value (True/False) used for the sentinel object in
-    boolean contexts.
-
     *module_name*, if supplied, will be used instead of inspecting the call
     stack to find the name of the module from which
     """
     _name: str
     _repr: str
     _module_name: str
-    _bool_value: bool
 
     def __new__(
         cls,
         name: str,
-        repr: Optional[str] = None,
-        bool_value: bool = True,
-        module_name: Optional[str] = None,
+        repr: str | None = None,
+        module_name: str | None = None,
     ):
         name = str(name)
-        repr = repr or f'<{name.split(".")[-1]}>'
-        bool_value = bool(bool_value)
+        repr = str(repr) if repr else f'<{name.split(".")[-1]}>'
         if not module_name:
-            try:
-                module_name = \
-                    _get_parent_frame().f_globals.get('__name__', '__main__')
-            except (AttributeError, ValueError):
-                module_name = __name__
+            parent_frame = _get_parent_frame()
+            module_name = (
+                parent_frame.f_globals.get('__name__', '__main__')
+                if parent_frame is not None
+                else __name__
+            )
 
-        registry_key = _sys.intern(f'{module_name}-{name}')
+        # Include the class's module and fully qualified name in the
+        # registry key to support sub-classing.
+        registry_key = _sys.intern(
+            f'{cls.__module__}-{cls.__qualname__}-{module_name}-{name}'
+        )
+        sentinel = _registry.get(registry_key, None)
+        if sentinel is not None:
+            return sentinel
+        sentinel = super().__new__(cls)
+        sentinel._name = name
+        sentinel._repr = repr
+        sentinel._module_name = module_name
         with _lock:
-            sentinel = _registry.get(registry_key, None)
-            if sentinel is None:
-                sentinel = super().__new__(cls)
-                sentinel._name = name
-                sentinel._repr = repr
-                sentinel._bool_value = bool_value
-                sentinel._module_name = module_name
-
-                _registry[registry_key] = sentinel
-
-        return sentinel
+            return _registry.setdefault(registry_key, sentinel)
 
     def __repr__(self):
         return self._repr
-
-    def __bool__(self):
-        return self._bool_value
 
     def __reduce__(self):
         return (
@@ -71,27 +83,42 @@ class Sentinel:
             (
                 self._name,
                 self._repr,
-                self._bool_value,
                 self._module_name,
             ),
         )
 
 
-_lock = Lock()
-_registry: Dict[str, Sentinel] = {}
+_lock = _Lock()
+_registry: dict[str, Sentinel] = {}
 
 
-if hasattr(_sys, '_getframe'):
-    def _get_parent_frame():
-        """Return the frame object for the caller's parent stack frame."""
+# The following implementation attempts to support Python
+# implementations which don't support sys._getframe(2), such as
+# Jython and IronPython.
+#
+# The version added to the stdlib may simply return sys._getframe(2),
+# without the fallbacks.
+#
+# For reference, see the implementation of namedtuple:
+# https://github.com/python/cpython/blob/67444902a0f10419a557d0a2d3b8675c31b075a9/Lib/collections/__init__.py#L503
+def _get_parent_frame():
+    """Return the frame object for the caller's parent stack frame."""
+    try:
+        # Two frames up = the parent of the function which called this.
         return _sys._getframe(2)
-else:  #pragma: no cover
-    def _get_parent_frame():
-        """Return the frame object for the caller's parent stack frame."""
-        try:
-            raise Exception
-        except Exception:
-            return _sys.exc_info()[2].tb_frame.f_back.f_back
-
-
-del Lock, final, Dict, Optional
+    except (AttributeError, ValueError):
+        global _get_parent_frame
+        def _get_parent_frame():
+            """Return the frame object for the caller's parent stack frame."""
+            try:
+                raise Exception
+            except Exception:
+                try:
+                    return _sys.exc_info()[2].tb_frame.f_back.f_back
+                except Exception:
+                    global _get_parent_frame
+                    def _get_parent_frame():
+                        """Return the frame object for the caller's parent stack frame."""
+                        return None
+                    return _get_parent_frame()
+        return _get_parent_frame()

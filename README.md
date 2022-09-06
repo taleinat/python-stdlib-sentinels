@@ -7,9 +7,11 @@ the inclusion of this utility in the Python standard library.
 ## Usage
 
 ```python
-from sentinels import sentinel
+from sentinels import Sentinel
 
-NotGiven = sentinel('NotGiven')
+NotGiven = Sentinel('NotGiven')
+
+MEGA = Sentinel('MEGA', repr='<MEGA>', module_name='my_mod')
 ```
 
 ## References

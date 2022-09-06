@@ -14,8 +14,10 @@ class TestSentinel(unittest.TestCase):
         self.sent_defined_in_function = Sentinel('defined_in_function')
 
     def test_identity(self):
-        self.assertIs(sent1, sent1)
-        self.assertEqual(sent1, sent1)
+        for sent in sent1, sent2, self.sent_defined_in_function:
+            with self.subTest(sent=sent):
+                self.assertIs(sent, sent)
+                self.assertEqual(sent, sent)
 
     def test_uniqueness(self):
         self.assertIsNot(sent1, sent2)
@@ -61,9 +63,7 @@ class TestSentinel(unittest.TestCase):
 
     def test_bool_value(self):
         self.assertTrue(sent1)
-        self.assertTrue(Sentinel('I_AM_TRUTHY'))
-        self.assertTrue(Sentinel('I_AM_ALSO_TRUTHY', bool_value=True))
-        self.assertFalse(Sentinel('I_AM_FALSY', bool_value=False))
+        self.assertTrue(Sentinel('I_AM_FALSY'))
 
     def test_automatic_module_name(self):
         self.assertIs(
@@ -74,6 +74,18 @@ class TestSentinel(unittest.TestCase):
             Sentinel('defined_in_function', module_name=__name__),
             self.sent_defined_in_function,
         )
+
+    def test_subclass(self):
+        class FalseySentinel(Sentinel):
+            def __bool__(self):
+                return False
+        subclass_sent = FalseySentinel('FOO')
+        self.assertIs(subclass_sent, subclass_sent)
+        self.assertEqual(subclass_sent, subclass_sent)
+        self.assertFalse(subclass_sent)
+        non_subclass_sent = Sentinel('FOO')
+        self.assertIsNot(subclass_sent, non_subclass_sent)
+        self.assertNotEqual(subclass_sent, non_subclass_sent)
 
 
 if __name__ == '__main__':

@@ -28,8 +28,8 @@ programming.  They have many uses, such as for:
     >>> "abc".find("d")
     -1
 
-* Missing pieces of data, such as NULL in relational databases or
-  "N/A" ("not available") in spreadsheets
+* Missing data, such as NULL in relational databases or "N/A" ("not
+  available") in spreadsheets
 
 Python has the special value ``None``, which is intended to be used as such
 a sentinel value in most cases.  However, sometimes an alternative sentinel
@@ -39,12 +39,12 @@ have arisen over the years, but uncommon enough that there hasn't been a
 clear need for standardization.  However, the common implementations,
 including some in the stdlib, suffer from several significant drawbacks.
 
-This PEP suggests adding a utility for defining sentinel values, to be used
+This PEP proposes adding a utility for defining sentinel values, to be used
 in the stdlib and made publicly available as part of the stdlib.
 
 Note: Changing all existing sentinels in the stdlib to be implemented this
 way is not deemed necessary, and whether to do so is left to the discretion
-of each maintainer.
+of the maintainers.
 
 
 Motivation
@@ -104,17 +104,21 @@ Rationale
 The criteria guiding the chosen implementation were:
 
 1. The sentinel objects should behave as expected by a sentinel object: When
-   compared using the ``is`` operator, it should always be considered identical
-   to itself but never to any other object.
+   compared using the ``is`` operator, it should always be considered
+   identical to itself but never to any other object.
 2. It should be simple to define as many distinct sentinel values as needed.
 3. The sentinel objects should have a clear and short repr.
-4. It should be possible to use strict type signatures for sentinels, which
-   refer to a specific sentinel value.
+4. It should be possible to use clear type signatures for sentinels.
 5. The sentinel objects should behave correctly after copying and/or
    unpickling.
 6. Creating a sentinel object should be a simple, straightforward one-liner.
 7. Works using CPython and PyPy3.  Will hopefully also work with other
    implementations.
+8. As simple and straightforward as possible, both in implementation and
+   especially in use.  Avoid this becoming one more to learn when learning
+   Python.  It should be a specialized tool, easy to find and use when needed,
+   and obvious enough when reading code that one would normally not feel a
+   need to look up its documentation.
 
 After researching existing idioms and implementations, and going through many
 different possible implementations, an implementation was written which meets
@@ -124,41 +128,53 @@ all of these criteria (see `Reference Implementation`_).
 Specification
 =============
 
-A new ``sentinel`` function will be added to a new ``sentinels`` module.
-It will accept a single required argument, the name of the sentinel object,
-and a two optional arguments, the repr of the object and whether it is
-"truthy".
+A new ``Sentinel`` class will be added to a new ``sentinels`` module.
+It's initializer will accept a single required argument, the name of the
+sentinel object, and two optional arguments: the repr of the object, and the
+name of its module::
 
-::
-
-    >>> NotGiven = sentinel('NotGiven')
+    >>> from sentinel import Sentinel
+    >>> NotGiven = Sentinel('NotGiven')
     >>> NotGiven
     <NotGiven>
-    >>> MISSING = sentinel('MISSING', repr='mymodule.MISSING')
+    >>> MISSING = Sentinel('MISSING', repr='mymodule.MISSING')
     >>> MISSING
     mymodule.MISSING
+    >>> MEGA = Sentinel('MEGA', repr='<MEGA>', module_name='mymodule')
+    <MEGA>
 
 Checking if a value is such a sentinel *should* be done using the ``is``
 operator, as is recommended for ``None``.  Equality checks using ``==`` will
 also work as expected, returning ``True`` only when the object is compared
 with itself.  Identity checks such as ``if value is MISSING:`` should usually
 be used rather than boolean checks such as ``if value:`` or ``if not value:``.
+Sentinel instances are truthy by default.
 
-The names of sentinels should be unique within each module.  When calling
-``sentinel()``in a module where a sentinel with that name was already
+The names of sentinels are unique within each module.  When calling
+``Sentinel()``in a module where a sentinel with that name was already
 defined, the existing sentinel with that name will be returned.  Sentinels
 with the same name in different modules will be distinct from each other.
 
 Creating a copy of a sentinel object, such as by using ``copy.copy()`` or by
 pickling and unpickling, will return the same object in normal circumstances.
 
-Type annotations for sentinel values will use `typing.Literal`_.
-For example::
+Type annotations for sentinel values should use ``Sentinel``.  For example::
 
-    def foo(value: int | Literal[NotGiven]) -> None:
+    def foo(value: int | Sentinel = MISSING) -> int:
         ...
 
-.. _typing.Literal: https://docs.python.org/3/library/typing.html#typing.Literal
+The ``module_name`` optional argument should normally not need to be supplied,
+as ``Sentinel()`` will usually be able to recognize the module in which it was
+called.  ``module_name`` should be supplied only in unusual cases when this
+automatic recognition does not work as intended, such as perhaps when using
+Jython or IronPython.  This parallels the designs of ``Enum`` and
+``namedtuple``.  For more details, see `PEP 435`_.
+
+The ``Sentinel`` class may be sub-classed.  Instances of each sub-class will
+be unique, even if using the same name and module.  This allows for
+customizing the behavior of sentinels, such as controlling their truthiness.
+
+.. _PEP 435: https://peps.python.org/pep-0435/#functional-api
 
 
 Reference Implementation
@@ -172,10 +188,9 @@ The reference implementation is found in a dedicated GitHub repo
     class Sentinel:
         """Unique sentinel values."""
 
-        def __new__(cls, name, repr=None, bool_value=True, module_name=None):
+        def __new__(cls, name, repr=None, module_name=None):
             name = str(name)
-            repr = repr or f'<{name.split(".")[-1]}>'
-            bool_value = bool(bool_value)
+            repr = str(repr) if repr else f'<{name.split(".")[-1]}>'
             if module_name is None:
                 try:
                     module_name = \
@@ -184,23 +199,20 @@ The reference implementation is found in a dedicated GitHub repo
                     module_name = __name__
 
             registry_key = f'{module_name}-{name}'
+
             sentinel = _registry.get(registry_key, None)
-            if sentinel is None:
-                sentinel = super().__new__(cls)
-                sentinel._name = name
-                sentinel._repr = repr
-                sentinel._bool_value = bool_value
-                sentinel._module_name = module_name
+            if sentinel is not None:
+                return sentinel
 
-                _registry[registry_key] = sentinel
+            sentinel = super().__new__(cls)
+            sentinel._name = name
+            sentinel._repr = repr
+            sentinel._module_name = module_name
 
-            return sentinel
+            return _registry.setdefault(registry_key, sentinel)
 
         def __repr__(self):
             return self._repr
-
-        def __bool__(self):
-            return self._bool_value
 
         def __reduce__(self):
             return (
@@ -208,7 +220,6 @@ The reference implementation is found in a dedicated GitHub repo
                 (
                     self._name,
                     self._repr,
-                    self._bool_value,
                     self._module_name,
                 ),
             )
@@ -270,14 +281,14 @@ Finally, this option was the least popular among the nine options in the poll
 A sentinel class decorator
 --------------------------
 
-The suggested interface::
+The suggested idiom is::
 
     @sentinel(repr='<NotGiven>')
     class NotGivenType: pass
     NotGiven = NotGivenType()
 
-While this allows for a very simple and clear implementation, the interface
-is too verbose, repetitive, and difficult to remember.
+While this allows for a very simple and clear implementation of the decorator,
+the idiom is too verbose, repetitive, and difficult to remember.
 
 
 Using class objects
@@ -286,7 +297,7 @@ Using class objects
 Since classes are inherently singletons, using a class as a sentinel value
 makes sense and allows for a simple implementation.
 
-The simplest version of this idiom is::
+The simplest version of this is::
 
    class NotGiven: pass
 
@@ -299,14 +310,10 @@ To have a clear repr, one would need to use a meta-class::
     @Sentinel
     class NotGiven: pass
 
-Using classes this way is unusual and could be confusing.  It would also cause
-such sentinel values to have some unexpected behavior, such as being callable.
-
-Furthermore, such implementations wouldn't have a distinct type for the
-sentinel, which is desirable for strict typing.  (A dedicated type could be
-created by a meta-class or class decorator, but at that point the
-implementation would become much more complex and loses its advantages over
-the chosen implementation.)
+Using classes this way is unusual and could be confusing.  The intention of
+code would be hard to understand without comments.  It would also cause
+such sentinels to have some unexpected and undesirable behavior, such as
+being callable.
 
 
 Define a recommended "standard" idiom, without supplying an implementation
@@ -327,7 +334,7 @@ Additional Notes
   repo [#reference-github-repo]_.
 
 * For sentinels defined in a class scope, to avoid potential name clashes,
-  consider using the fully-qualified name of the variable in the module.  Only
+  one should use the fully-qualified name of the variable in the module.  Only
   the part of the name after the last period will be used for the default
   repr.  For example::
 
