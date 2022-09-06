@@ -51,7 +51,7 @@ Motivation
 ==========
 
 In May 2021, a question was brought up on the python-dev mailing list
-[#python-dev-thread]_ about how to better implement a sentinel value for
+[1]_ about how to better implement a sentinel value for
 ``traceback.print_exception``.  The existing implementation used the
 following common idiom::
 
@@ -76,17 +76,16 @@ in the discussion:
    instance being created and thus comparisons using ``is`` failing
 
 In the ensuing discussion, Victor Stinner supplied a list of currently used
-sentinel values in the Python standard library
-[#list-of-sentinels-in-stdlib]_.  This showed that the need for sentinels is
-fairly common, that there are various implementation methods used even
-within the stdlib, and that many of these suffer from at least one of the
-three aforementioned drawbacks.
+sentinel values in the Python standard library [2]_. This showed that the
+need for sentinels is fairly common, that there are various implementation
+methods used even within the stdlib, and that many of these suffer from at
+least one of the three aforementioned drawbacks.
 
 The discussion did not lead to any clear consensus on whether a standard
 implementation method is needed or desirable, whether the drawbacks mentioned
 are significant, nor which kind of implementation would be good.
 
-A poll was created on discuss.python.org [#poll]_ to get a clearer sense of
+A poll [3]_ was created on discuss.python.org to get a clearer sense of
 the community's opinions. The poll's results were not conclusive, with 40%
 voting for "The status-quo is fine / there’s no need for consistency in
 this", but most voters voting for one or more standardized solutions.
@@ -151,7 +150,7 @@ be used rather than boolean checks such as ``if value:`` or ``if not value:``.
 Sentinel instances are truthy by default.
 
 The names of sentinels are unique within each module.  When calling
-``Sentinel()``in a module where a sentinel with that name was already
+``Sentinel()`` in a module where a sentinel with that name was already
 defined, the existing sentinel with that name will be returned.  Sentinels
 with the same name in different modules will be distinct from each other.
 
@@ -168,20 +167,19 @@ as ``Sentinel()`` will usually be able to recognize the module in which it was
 called.  ``module_name`` should be supplied only in unusual cases when this
 automatic recognition does not work as intended, such as perhaps when using
 Jython or IronPython.  This parallels the designs of ``Enum`` and
-``namedtuple``.  For more details, see `PEP 435`_.
+``namedtuple``.  For more details, see
+`PEP 435 <https://peps.python.org/pep-0435/#functional-api>`_.
 
 The ``Sentinel`` class may be sub-classed.  Instances of each sub-class will
 be unique, even if using the same name and module.  This allows for
 customizing the behavior of sentinels, such as controlling their truthiness.
 
-.. _PEP 435: https://peps.python.org/pep-0435/#functional-api
-
 
 Reference Implementation
 ========================
 
-The reference implementation is found in a dedicated GitHub repo
-[#reference-github-repo]_.  A simplified version follows::
+The reference implementation is found in a dedicated GitHub repo [4]_.  A
+simplified version follows::
 
     _registry = {}
 
@@ -236,7 +234,7 @@ This suffers from all of the drawbacks mentioned in the `Rationale`_ section.
 
 
 Add a single new sentinel value, such as ``MISSING`` or ``Sentinel``
------------------------------------------------------------------
+--------------------------------------------------------------------
 
 Since such a value could be used for various things in various places, one
 could not always be confident that it would never be a valid value in some use
@@ -246,7 +244,7 @@ with confidence without needing to consider potential edge-cases.
 Additionally, it is useful to be able to provide a meaningful name and repr
 for a sentinel value, specific to the context where it is used.
 
-Finally, this was a very unpopular option in the poll [#poll]_, with only 12%
+Finally, this was a very unpopular option in the poll [3]_, with only 12%
 of the votes voting for it.
 
 
@@ -274,8 +272,8 @@ Besides the excessive repetition, the repr is overly long:
 ``<NotGivenType.NotGiven: 'NotGiven'>``.  A shorter repr can be defined, at
 the expense of a bit more code and yet more repetition.
 
-Finally, this option was the least popular among the nine options in the poll
-[#poll]_, being the only option to receive no votes.
+Finally, this option was the least popular among the nine options in the
+poll [3]_, being the only option to receive no votes.
 
 
 A sentinel class decorator
@@ -322,7 +320,7 @@ Define a recommended "standard" idiom, without supplying an implementation
 Most common exiting idioms have significant drawbacks.  So far, no idiom
 has been found that is clear and concise while avoiding these drawbacks.
 
-Also, in the poll on this subject [#poll]_, the options for recommending an
+Also, in the poll [3]_ on this subject, the options for recommending an
 idiom were unpopular, with the highest-voted option being voted for by only
 25% of the voters.
 
@@ -331,7 +329,7 @@ Additional Notes
 ================
 
 * This PEP and the initial implementation are drafted in a dedicated GitHub
-  repo [#reference-github-repo]_.
+  repo [4]_.
 
 * For sentinels defined in a class scope, to avoid potential name clashes,
   one should use the fully-qualified name of the variable in the module.  Only
@@ -352,10 +350,10 @@ Additional Notes
 References
 ==========
 
-.. [#python-dev-thread] Python-Dev mailing list: `The repr of a sentinel <https://mail.python.org/archives/list/python-dev@python.org/thread/ZLVPD2OISI7M4POMTR2FCQTE6TPMPTO3/>`_
-.. [#list-of-sentinels-in-stdlib] Python-Dev mailing list: `"The stdlib contains tons of sentinels" <https://mail.python.org/archives/list/python-dev@python.org/message/JBYXQH3NV3YBF7P2HLHB5CD6V3GVTY55/>`_
-.. [#poll] discuss.python.org Poll: `Sentinel Values in the Stdlib <https://discuss.python.org/t/sentinel-values-in-the-stdlib/8810/>`_
-.. [#reference-github-repo] `Reference implementation at the taleinat/python-stdlib-sentinels GitHub repo <https://github.com/taleinat/python-stdlib-sentinels>`_
+.. [1] Python-Dev mailing list: `The repr of a sentinel <https://mail.python.org/archives/list/python-dev@python.org/thread/ZLVPD2OISI7M4POMTR2FCQTE6TPMPTO3/>`_
+.. [2] Python-Dev mailing list: `"The stdlib contains tons of sentinels" <https://mail.python.org/archives/list/python-dev@python.org/message/JBYXQH3NV3YBF7P2HLHB5CD6V3GVTY55/>`_
+.. [3] discuss.python.org Poll: `Sentinel Values in the Stdlib <https://discuss.python.org/t/sentinel-values-in-the-stdlib/8810/>`_
+.. [4] `Reference implementation at the taleinat/python-stdlib-sentinels GitHub repo <https://github.com/taleinat/python-stdlib-sentinels>`_
 .. [5] `bpo-44123: Make function parameter sentinel values true singletons <https://bugs.python.org/issue44123>`_
 .. [6] `The "sentinels" package on PyPI <https://pypi.org/project/sentinels/>`_
 .. [7] `The "sentinel" package on PyPI <https://pypi.org/project/sentinel/>`_
