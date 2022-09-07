@@ -122,7 +122,7 @@ The criteria guiding the chosen implementation were:
 7. Works using CPython and PyPy3.  Will hopefully also work with other
    implementations.
 8. As simple and straightforward as possible, both in implementation and
-   especially in use.  Avoid this becoming one more to learn when learning
+   especially in use.  Avoid this becoming one more thing to learn when learning
    Python.  It should be a specialized tool, easy to find and use when needed,
    and obvious enough when reading code that one would normally not feel a
    need to look up its documentation.
@@ -141,7 +141,7 @@ Specification
 =============
 
 A new ``Sentinel`` class will be added to a new ``sentinels`` module.
-It's initializer will accept a single required argument, the name of the
+Its initializer will accept a single required argument, the name of the
 sentinel object, and two optional arguments: the repr of the object, and the
 name of its module::
 
