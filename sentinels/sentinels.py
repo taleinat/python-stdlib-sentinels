@@ -38,16 +38,21 @@ class Sentinel:
 
     *module_name*, if supplied, will be used instead of inspecting the call
     stack to find the name of the module from which
+
+    *truthy*, should be the value that is returned on Boolean evaluation.
+    if `None`, a `ValueError` is raised.
     """
     _name: str
     _repr: str
     _module_name: str
+    _truthy: str | None
 
     def __new__(
         cls,
         name: str,
         repr: str | None = None,
         module_name: str | None = None,
+        truthy: bool | None = None,
     ):
         name = str(name)
         repr = str(repr) if repr else f'<{name.split(".")[-1]}>'
@@ -71,8 +76,15 @@ class Sentinel:
         sentinel._name = name
         sentinel._repr = repr
         sentinel._module_name = module_name
+        sentinel._truthy = truthy
         with _lock:
             return _registry.setdefault(registry_key, sentinel)
+
+    def __bool__(self) -> bool:
+        if self._truthy is None:
+            raise ValueError(f"{self._name} is ambiguous.")
+        else:
+            return self._truthy
 
     def __repr__(self):
         return self._repr
